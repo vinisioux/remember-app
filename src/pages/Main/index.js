@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Text } from 'react-native';
 import { format } from 'date-fns';
-
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { openDatabase } from 'react-native-sqlite-storage';
 
 import {
   Container,
@@ -19,16 +19,44 @@ import {
 } from './styles';
 
 const Main = ({ navigation }) => {
-  useEffect(() => {
-    // const alarm = await RNCalendarEvents.authorizationStatus();
+  const [tasks, setTasks] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadTasks = useCallback(() => {
+    const db = openDatabase({ name: 'schedules.db' });
+
+    db.transaction((txn) => {
+      // txn.executeSql('DELETE FROM schedules');
+      txn.executeSql(
+        'SELECT * FROM schedules WHERE date_time > ? ORDER BY date_time desc',
+        [String(new Date())],
+        (tx, res) => {
+          console.log('item:', res.rows.raw());
+          setTasks(res.rows.raw());
+        },
+      );
+    });
   }, []);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTasks([]);
+    loadTasks();
+    setRefreshing(false);
+  };
 
   return (
     <Container>
       <TaskContainer>
         <TasksList
           data={tasks}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           renderItem={({ item }) => (
             <Task
               onPress={() => navigation.navigate('TaskDetail', { task: item })}
@@ -38,8 +66,12 @@ const Main = ({ navigation }) => {
                   <TaskTitle>{item.title}</TaskTitle>
                   <TaskHeaderDatetime>
                     <FontAwesome name="clock-o" color="#000" size={20} />
-                    <Text>{String(format(item.datetime, 'dd/MM/yyyy'))}</Text>
-                    <Text>{String(format(item.datetime, 'HH:mm')) + ' H'}</Text>
+                    <Text>
+                      {String(format(new Date(item.date_time), 'dd/MM/yyyy'))}
+                    </Text>
+                    <Text>
+                      {String(format(new Date(item.date_time), 'HH:mm')) + ' H'}
+                    </Text>
                   </TaskHeaderDatetime>
                 </TaskHeader>
                 <DescriptionArea>
@@ -66,7 +98,7 @@ const Main = ({ navigation }) => {
 };
 
 export default Main;
-
+/*
 const tasks = [
   {
     id: '1',
@@ -106,3 +138,4 @@ const tasks = [
     description: 'Descrição do lembrete 6',
   },
 ];
+*/

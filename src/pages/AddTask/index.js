@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Button, Text, Platform } from 'react-native';
+import { Button, Text, Platform, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import ReactNativeAN from 'react-native-alarm-notification';
 import Id from '../../utils/randomId';
+import { openDatabase } from 'react-native-sqlite-storage';
 
 import {
   Container,
@@ -19,6 +20,8 @@ import {
 } from './styles';
 
 const AddTask = ({ navigation }) => {
+  const db = openDatabase({ name: 'schedules.db' });
+
   const [date, setDate] = useState(new Date());
   const [mode, setMode] = useState('date');
   const [show, setShow] = useState(false);
@@ -46,30 +49,48 @@ const AddTask = ({ navigation }) => {
   };
 
   async function saveTask() {
-    // const fire_date = ReactNativeAN.parseDate(new Date(Date.now() + 2000));
     const fire_date = ReactNativeAN.parseDate(date);
-    console.log(fire_date);
-
     const id = Id();
 
     const alarmData = {
       alarm_id: id,
       title: taskTitle,
-      message: taskDescription,
+      message: taskDescription || ' ',
       small_icon: 'ic_launcher',
+      large_icon: 'ic_launcher_round',
       schedule_once: true,
       fire_date,
+      channel: 'wakeup',
+      has_button: true,
+      play_sound: false,
     };
 
     ReactNativeAN.scheduleAlarm(alarmData);
-    // ReactNativeAN.sendNotification(alarmData);
 
-    // const alarms = await ReactNativeAN.getScheduledAlarms();
-    // console.log(alarms);
-
-    ReactNativeAN.deleteAlarm('12345');
-
-    navigation.goBack();
+    db.transaction((tx) => {
+      tx.executeSql(
+        'INSERT INTO schedules (id, title, description, date_time) VALUES (?,?,?,?)',
+        [id, taskTitle, taskDescription || ' ', String(date)],
+        (tx, results) => {
+          console.log('Results', results.rowsAffected);
+          if (results.rowsAffected > 0) {
+            Alert.alert(
+              'Sucesso!',
+              'Lembrete cadastrado',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => navigation.navigate('Main'),
+                },
+              ],
+              { cancelable: false },
+            );
+          } else {
+            Alert.alert('Falha ao cadastrar');
+          }
+        },
+      );
+    });
   }
 
   return (

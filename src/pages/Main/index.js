@@ -28,10 +28,11 @@ const Main = ({ navigation }) => {
     db.transaction((txn) => {
       // txn.executeSql('DELETE FROM schedules');
       txn.executeSql(
-        'SELECT * FROM schedules WHERE date_time > ? ORDER BY date_time desc',
-        [String(new Date())],
+        "SELECT * FROM schedules WHERE created_at > datetime('now', 'localtime') ORDER BY date_time desc",
+        [],
         (tx, res) => {
-          console.log('item:', res.rows.raw());
+          console.log(res.rows.raw());
+
           setTasks(res.rows.raw());
         },
       );

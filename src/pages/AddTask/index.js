@@ -69,8 +69,14 @@ const AddTask = ({ navigation }) => {
 
     db.transaction((tx) => {
       tx.executeSql(
-        'INSERT INTO schedules (id, title, description, date_time) VALUES (?,?,?,?)',
-        [id, taskTitle, taskDescription || ' ', String(date)],
+        'INSERT INTO schedules (id, title, description, date_time, created_at) VALUES (?,?,?,?,?)',
+        [
+          id,
+          taskTitle,
+          taskDescription || ' ',
+          String(date),
+          format(date, 'yyyy-MM-dd HH:mm:ss'),
+        ],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {

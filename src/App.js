@@ -19,7 +19,7 @@ const App = () => {
           if (res.rows.length === 0) {
             txn.executeSql('DROP TABLE IF EXISTS schedules', []);
             txn.executeSql(
-              'CREATE TABLE IF NOT EXISTS schedules(id INTEGER PRIMARY KEY, title VARCHAR(20), description VARCHAR(100), date_time VARCHAR(20))',
+              'CREATE TABLE IF NOT EXISTS schedules(id INTEGER PRIMARY KEY, title VARCHAR(20), description VARCHAR(100), date_time VARCHAR(20), created_at DATETIME)',
               [],
             );
           }
